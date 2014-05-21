@@ -26,6 +26,9 @@ def reset_score_d(D):
 	D['rotx'] = 0.0
 	D['roty'] = 0.0
 	D['rotz'] = 0.0
+	D['accx'] = 0.0
+	D['accy'] = 0.0
+	D['accz'] = 0.0
 	D['call'] = 0.0
 	D['active'] = 0.0
 	D['charge'] = 0.0
@@ -73,6 +76,7 @@ def compute_comfort(s_score, t_score):
 					'sys_load':1.0, 'noise':1.0, 'light':1.0, \
 					'magx':1.0, 'magy':1.0, 'magz':1.0, \
 					'rotx':1.0, 'roty':1.0, 'rotz':1.0, \
+					'accx':1.0, 'accy':1.0, 'accz':1.0, \
 					'active':1.0, 'battery':1.0, 'charge':1.0}
 	wtot_s = 0.0
 	cnt_s = 0.0
@@ -346,7 +350,7 @@ osep = sep
 TIMEOUT = long(options.timeout) # in seconds  
 CELLCT = 1 # min num of cells before computing -- we want even buckets for location that describes a place
 FRQ_SENSORS = ['wifi', 'app', 'call', 'active', 'charge']
-KDE_SENSORS = ['usr_load', 'sys_load', 'noise', 'light', 'magx', 'magy', 'magz', 'rotx', 'roty', 'rotz', 'battery'] 
+KDE_SENSORS = ['usr_load', 'sys_load', 'noise', 'light', 'magx', 'magy', 'magz', 'rotx', 'roty', 'rotz', 'accx', 'accy', 'accz', 'battery'] 
 DEBUG = False
 if options.input_dir is not None:
 	#
@@ -413,6 +417,9 @@ sensor['magz'] = []
 sensor['rotx'] = []
 sensor['roty'] = []
 sensor['rotz'] = []
+sensor['accx'] = []
+sensor['accy'] = []
+sensor['accz'] = []
 sensor['call'] = []
 sensor['active'] = [] #display for rice, device for mit
 sensor['charge'] = []
@@ -480,6 +487,13 @@ while line:
 			sensor['rotx'].append( (tm, [rotx]) )
 			sensor['roty'].append( (tm, [roty]) )
 			sensor['rotz'].append( (tm, [rotz]) )
+		elif 'AccelProbe' in token[SNAME]: # gcu
+			accx = my_float_formatter( float( token[SNAME + 4] ) )
+			accy = my_float_formatter( float( token[SNAME + 5] ) )
+			accz = my_float_formatter( float( token[SNAME + 6] ) )
+			sensor['accx'].append( (tm, [accx]) )
+			sensor['accy'].append( (tm, [accy]) )
+			sensor['accz'].append( (tm, [accz]) )
 		elif 'Mit.CommProbe' in token[SNAME] or 'Rice.CallProbe' in token[SNAME]: # MIT and Rice
 			callinfo = ' '.join(token[SNAME + 4:]) # Mit has two cols, rice has one
 			sensor['call'].append( (tm, [callinfo]) )
@@ -531,6 +545,9 @@ while line:
 				update_spatial(S, loc_id, aggregate_by_ts( sensor['rotx'] ), 'rotx')
 				update_spatial(S, loc_id, aggregate_by_ts( sensor['roty'] ), 'roty')
 				update_spatial(S, loc_id, aggregate_by_ts( sensor['rotz'] ), 'rotz')
+				update_spatial(S, loc_id, aggregate_by_ts( sensor['accx'] ), 'accx')
+				update_spatial(S, loc_id, aggregate_by_ts( sensor['accy'] ), 'accy')
+				update_spatial(S, loc_id, aggregate_by_ts( sensor['accz'] ), 'accz')
 				update_spatial(S, loc_id, sensor['call'], 'call')
 				update_spatial(S, loc_id, sensor['active'], 'active')
 				update_spatial(S, loc_id, sensor['charge'], 'charge')
@@ -549,6 +566,9 @@ while line:
 				s_score['rotx'] = use_spatial(S, loc_id, aggregate_by_ts( sensor['rotx'] ), 'rotx', FRQ_SENSORS, KDE_SENSORS)
 				s_score['roty'] = use_spatial(S, loc_id, aggregate_by_ts( sensor['roty'] ), 'roty', FRQ_SENSORS, KDE_SENSORS)
 				s_score['rotz'] = use_spatial(S, loc_id, aggregate_by_ts( sensor['rotz'] ), 'rotz', FRQ_SENSORS, KDE_SENSORS)
+				s_score['accx'] = use_spatial(S, loc_id, aggregate_by_ts( sensor['accx'] ), 'accx', FRQ_SENSORS, KDE_SENSORS)
+				s_score['accy'] = use_spatial(S, loc_id, aggregate_by_ts( sensor['accy'] ), 'accy', FRQ_SENSORS, KDE_SENSORS)
+				s_score['accz'] = use_spatial(S, loc_id, aggregate_by_ts( sensor['accz'] ), 'accz', FRQ_SENSORS, KDE_SENSORS)
 				s_score['call'] = use_spatial(S, loc_id, sensor['call'], 'call', FRQ_SENSORS, KDE_SENSORS)
 				s_score['active'] = use_spatial(S, loc_id, sensor['active'], 'active', FRQ_SENSORS, KDE_SENSORS)
 				s_score['charge'] = use_spatial(S, loc_id, sensor['charge'], 'charge', FRQ_SENSORS, KDE_SENSORS)
@@ -569,6 +589,9 @@ while line:
 			update_temporal(T, aggregate_by_ts( sensor['rotx'] ), 'rotx')
 			update_temporal(T, aggregate_by_ts( sensor['roty'] ), 'roty')
 			update_temporal(T, aggregate_by_ts( sensor['rotz'] ), 'rotz')
+			update_temporal(T, aggregate_by_ts( sensor['accx'] ), 'accx')
+			update_temporal(T, aggregate_by_ts( sensor['accy'] ), 'accy')
+			update_temporal(T, aggregate_by_ts( sensor['accz'] ), 'accz')
 			update_temporal(T, sensor['call'], 'call')
 			update_temporal(T, sensor['active'], 'active')
 			update_temporal(T, sensor['charge'], 'charge')
@@ -587,6 +610,9 @@ while line:
 			t_score['rotx'] = use_temporal(T, aggregate_by_ts( sensor['rotx'] ), 'rotx', FRQ_SENSORS, KDE_SENSORS)
 			t_score['roty'] = use_temporal(T, aggregate_by_ts( sensor['roty'] ), 'roty', FRQ_SENSORS, KDE_SENSORS)
 			t_score['rotz'] = use_temporal(T, aggregate_by_ts( sensor['rotz'] ), 'rotz', FRQ_SENSORS, KDE_SENSORS)
+			t_score['accx'] = use_temporal(T, aggregate_by_ts( sensor['accx'] ), 'accx', FRQ_SENSORS, KDE_SENSORS)
+			t_score['accy'] = use_temporal(T, aggregate_by_ts( sensor['accy'] ), 'accy', FRQ_SENSORS, KDE_SENSORS)
+			t_score['accz'] = use_temporal(T, aggregate_by_ts( sensor['accz'] ), 'accz', FRQ_SENSORS, KDE_SENSORS)
 			t_score['call'] = use_temporal(T, sensor['call'], 'call', FRQ_SENSORS, KDE_SENSORS)
 			t_score['active'] = use_temporal(T, sensor['active'], 'active', FRQ_SENSORS, KDE_SENSORS)
 			t_score['charge'] = use_temporal(T, sensor['charge'], 'charge', FRQ_SENSORS, KDE_SENSORS)
@@ -595,9 +621,9 @@ while line:
 			if writtencount == 0:
 				print osep.join( [ "comb_score", "s_score", "t_score", "time_neg_score", \
 				"t_wifi", "t_app", "t_usrload", "t_sysload", "t_noise", \
-				"t_light", "t_magx", "t_magy", "t_magz", "t_rotx", "t_roty", "t_rotz", "t_call", "t_active", "t_charge", "t_battery",\
+				"t_light", "t_magx", "t_magy", "t_magz", "t_rotx", "t_roty", "t_rotz", "t_accx", "t_accy", "t_accz", "t_call", "t_active", "t_charge", "t_battery",\
 				"s_wifi", "s_app", "s_usrload", "s_sysload", "s_noise", \
-				"s_light", "s_magx", "s_magy", "s_magz", "s_rotx", "s_roty", "s_rotz", "s_call", "s_active", "s_charge", "s_battery", \
+				"s_light", "s_magx", "s_magy", "s_magz", "s_rotx", "s_roty", "s_rotz", "s_accx", "s_accy", "s_accz", "s_call", "s_active", "s_charge", "s_battery", \
 				"tm", "p_tm", "tm_diff", "loc_id"] )
 			(sval, tval) = compute_comfort(s_score, t_score)
 			# t_as_neg = time_as_negative( tm, p_tm )
@@ -610,11 +636,13 @@ while line:
 				combined = 1.0
 			outstr =  [str(combined), str(sval), str(tval), str(t_as_neg), \
 						str(t_score['wifi']), str(t_score['app']), str(t_score['usr_load']), str(t_score['sys_load']), str(t_score['noise']), \
-						str(t_score['light']), str(t_score['magx']), str(t_score['magy']), str(t_score['magz']), str(t_score['rotx']), str(t_score['roty']), \
-						str(t_score['rotz']), str(t_score['call']), str(t_score['active']), str(t_score['charge']), str(t_score['battery']), \
+						str(t_score['light']), str(t_score['magx']), str(t_score['magy']), str(t_score['magz']), str(t_score['rotx']), str(t_score['roty']), str(t_score['rotz']), \
+						str(t_score['accx']), str(t_score['accy']), str(t_score['accz']), \
+						str(t_score['call']), str(t_score['active']), str(t_score['charge']), str(t_score['battery']), \
 						str(s_score['wifi']), str(s_score['app']), str(s_score['usr_load']), str(s_score['sys_load']), str(s_score['noise']), \
-						str(s_score['light']), str(s_score['magx']), str(s_score['magy']), str(s_score['magz']), str(s_score['rotx']), str(s_score['roty']), \
-						str(s_score['rotz']), str(s_score['call']), str(s_score['active']), str(s_score['charge']), str(s_score['battery']), \
+						str(s_score['light']), str(s_score['magx']), str(s_score['magy']), str(s_score['magz']), str(s_score['rotx']), str(s_score['roty']), str(s_score['rotz']), \
+						str(s_score['accx']), str(s_score['accy']), str(s_score['accz']), \
+						str(s_score['call']), str(s_score['active']), str(s_score['charge']), str(s_score['battery']), \
 						str(tm), str(p_tm), str(tm-p_tm), str(loc_id).replace(' ','')]
 			
 			print osep.join(outstr)
@@ -635,6 +663,9 @@ while line:
 		sensor['rotx'] = []
 		sensor['roty'] = []
 		sensor['rotz'] = []
+		sensor['accx'] = []
+		sensor['accy'] = []
+		sensor['accz'] = []
 		sensor['call'] = []
 		sensor['active'] = []
 		sensor['charge'] = []
